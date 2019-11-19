@@ -28,6 +28,7 @@ t2 = Textimage.new("t2", lire("t2.txt"))
 t3 = Textimage.new("t3", lire("t3.txt"))
 symboles = t1.symboles  +  t2.symboles +  t3.symboles
 symboles = symboles.uniq.sort
+
 puts "#{symboles.size}\: #{symboles.join}"
 
 puts t1.nom
