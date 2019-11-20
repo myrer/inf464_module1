@@ -59,7 +59,7 @@ end
 scores = population.collect do |individu|
   individu.fitness
 end
-scores = scores.uniq.sort
+scores = scores.sort
 
 somme_scores = 0
 scores.each do |score|
@@ -69,8 +69,9 @@ end
 sum = 0
 scores.each do |score|
   pcent = score.to_f/somme_scores*100.0
-  puts "#{score} / #{somme_scores}\ #{pcent}"
-  sum = sum + pcent
+  nslots = (( score.to_f/somme_scores)*n).round
+  puts "#{score} / #{somme_scores}\ #{pcent}\t #{nslots}"
+  sum = sum + nslots
 end
 
 puts sum
