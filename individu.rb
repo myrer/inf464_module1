@@ -1,23 +1,15 @@
 class Individu
-  def initialize(chromo, fit, ind)
+  def initialize(chromo, s, ind)
     @chromosome = chromo
-    @fitness = fit
+    @score = s
     @ind = ind
-  end
-
-  def chromosome
-    @chromosome
-  end
-
-  def fitness
-    @fitness
-  end
-
-  def ind
-    @ind
+    @cumul = 0.0
   end
 
   def to_s
-    "#{@fitness}\t: #{@chromosome.join()}"
+    "#{@score}\t#{@cumul}: #{@chromosome.join()}"
   end
+
+  attr_reader :chromosome, :score, :ind, :cumul
+  attr_writer :cumul
 end
