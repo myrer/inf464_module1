@@ -2,6 +2,19 @@ class Individu
     attr_accessor :chromosome, :score, :probabilite, :prob_cumulee
 end
 
+def lire_text_art(fname)
+  ary = Array.new
+  f = File.open(fname, "r")
+
+  while ligne = f.gets
+    ligne = ligne.chomp
+    ligne.each_char { |chr| ary << chr  }
+  end
+  f.close
+
+  return ary
+end
+
 def chromosome_au_hasard(symboles, n)
   chromosome = Array.new
   n.times{ chromosome << symboles.sample }
@@ -47,7 +60,7 @@ def choisir_individu_au_hasard(individus)
   while
     prob = rand
     tmp = individus.select{|individu| individu.prob_cumulee >= prob - delta and individu.prob_cumulee <= prob + delta}
-    return tmp.first if !tmp.nil?
+    return tmp.first if !tmp.empty?
   end
 end
 
@@ -81,7 +94,7 @@ end
 #=====
 
 #---Hyperparamètres
-population = 1000
+population = 1500
 nombre_generations = 800
 taux_mutation = 0.02
 nombre_mutations = (taux_mutation * population).to_i
@@ -92,11 +105,12 @@ longueur_chromosome = colonnes*rangees
 pcent = 0.0
 
 ref = Array.new
-str1d  =  ".._\\||\\///.../.........\\..|..0...0...|.|....\\/....|..\\..\\___/../...\\......./.....|......|.."
-str1d = str1d.gsub(".", " ")
-str1d.each_char { |chr| ref << chr  }
+#str1d  =  ".._\\||\\///.../.........\\..|..0...0...|.|....\\/....|..\\..\\___/../...\\......./.....|......|.."
+ref = lire_text_art("text_art_1.txt")
 symboles = ref.uniq
 max_score = longueur_chromosome*symboles.size
+#afficher_chromosome_1d(ref)
+#afficher_chromosome_2d(ref, colonnes, rangees)
 
 #---Générer les individus de la génération initiale
 individus = Array.new
@@ -134,7 +148,7 @@ nombre_generations.times do |gen|
   nouveaux_individus = calculer_probabilite_reproduction(nouveaux_individus)
 
   #Mutations
-  if pcent >= 95.0
+  if pcent >= 97.0
     nombre_mutations_ajustees = nombre_mutations/2
   else
     nombre_mutations_ajustees = nombre_mutations
