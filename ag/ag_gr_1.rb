@@ -2,12 +2,6 @@ class Individu
     attr_accessor :chromosome, :score, :probabilite, :prob_cumulee
 end
 
-def chromosome_au_hasard(symboles, n)
-  chromosome = Array.new
-  n.times{ chromosome << symboles.sample }
-  return chromosome
-end
-
 def afficher_chromosome(c)
     puts c.join
 end
@@ -40,22 +34,37 @@ def score(chromosome, eleves)
   #Pour obtenir le niveau d'anglais de l'élève 2 : eleves[2][4]
   #Pour obtenir le cours d'art du dernier élève : eleves[-1][7]
 
-  groupe_compte = Hash.new
-  #Le compte de chaque groupe commence à 0.
-  #["41","42","43","44","45","46","47","48"].each{|groupe| groupe_compte[groupe] = 0}
-  groupe_compte["41"] = 0
-  groupe_compte["42"] = 0
-  groupe_compte["43"] = 0
-  groupe_compte["44"] = 0
-  groupe_compte["45"] = 0
-  groupe_compte["46"] = 0
-  groupe_compte["47"] = 0
-  groupe_compte["48"] = 0
 
-  chromosome.each do |groupe|
-    groupe_compte[groupe] += 1 #idem à groupe_compte[groupe] = groupe_compte[groupe] + 1
+  #Le compte de chaque groupe commence à 0.
+  groupe_compte = Hash.new
+  ["41","42","43","44","45","46","47","48"].each{|groupe| groupe_compte[groupe] = 0}
+  ["ELA1","EESL1","EESL3", "EESL5","EESL7","ESL3","ESL5","ESL7" ].each{|groupe| groupe_compte[groupe] = 0}
+
+  profil_gr_anglais = { "41-ELA" => "ELA1", "41-EESL" => "EESL1",
+                        "42-ELA" => "ELA1", "42-EESL" => "EESL1",
+                        "43-ESL" => "ESL3", "43-EESL" => "EESL3",
+                        "44-ESL" => "ESL3", "44-EESL" => "EESL3",
+                        "45-ESL" => "ESL5", "45-EESL" => "EESL5",
+                        "46-ESL" => "ESL5", "46-EESL" => "EESL5",
+                        "47-ESL" => "ESL7", "47-EESL" => "EESL7",
+                        "48-ESL" => "ESL7", "48-EESL" => "EESL7" }
+
+
+  #Compter le nombre d'élèves par groupe
+  chromosome.each_with_index do |groupe, index|
+    groupe_compte[groupe] += 1
+
+    profil = "#{groupe}-#{eleves[index][4]}"
+    anglais = profil_gr_anglais[profil]
+    #puts "#{profil} #{anglais}"
+    groupe_compte[anglais] += 1
   end
 
+  #groupe_compte.each {|g,c| print "#{g}:#{c}\t"}
+  #puts
+  erreurs = 0
+
+  #Compter les erreurs dues aux dépassements dans les groupes de base
   groupe_max = Hash.new
   groupe_max["41"] = 33
   groupe_max["42"] = 36
@@ -65,14 +74,20 @@ def score(chromosome, eleves)
   groupe_max["46"] = 36
   groupe_max["47"] = 33
   groupe_max["48"] = 33
-
-
-  erreurs = 0
+  groupe_max["ELA1"] = 36
+  groupe_max["EESL1"] = 36
+  groupe_max["EESL3"] = 36
+  groupe_max["EESL5"] = 36
+  groupe_max["EESL7"] = 36
+  groupe_max["ESL3"] = 31
+  groupe_max["ESL5"] = 31
+  groupe_max["ESL7"] = 31
 
   groupe_compte.each do |groupe, compte|
     if compte > groupe_max[groupe]
       erreurs += compte - groupe_max[groupe]
     end
+    erreurs += (compte - 33).abs
   end
 
   return 1000 - erreurs
@@ -137,13 +152,21 @@ while ligne = f.gets
 	eleves << donnees
 end
 f.close
+eleves = eleves.shuffle
+
+nela = eleves.select{|el| el[4] == "ELA"}.size
+puts "ELA #{nela}"
+neesl = eleves.select{|el| el[4] == "EESL"}.size
+puts "EESL #{neesl}"
+nesl = eleves.select{|el| el[4] == "ESL"}.size
+puts "ESL #{nesl}"
 
 #---Hyperparamètres
-population = 1000
+population = 800
 nombre_generations = 1000
 taux_mutation = 0.02
 nombre_mutations = (taux_mutation * population).to_i
-mutation_par_chromosome = 5
+mutation_par_chromosome = 10
 longueur_chromosome = eleves.size
 pcent = 0.0
 
@@ -152,12 +175,23 @@ max_score = 1000
 
 #---Générer les individus de la génération initiale
 individus = Array.new
+programme_groupes = {  "REG" => ["41", "43", "45", "47", "48"],
+                       "ENR" => ["42", "44", "46"] }
+anglais_groupes = { "ELA" => ["41", "42"],
+                    "EESL" => ["41", "42", "43", "44", "45", "46", "47", "48"],
+                    "ESL" =>  ["43", "44", "45", "46", "47", "48"] }
 
 population.times do
-  c = chromosome_au_hasard(symboles, longueur_chromosome)
-  s = score(c, eleves)
+  chromosome = Array.new
+  longueur_chromosome.times do |index|
+    eleve = eleves[index]
+    groupes_permis = programme_groupes[eleve[3]] & anglais_groupes[eleve[4]]
+    chromosome << groupes_permis.sample
+  end
+
+  s = score(chromosome, eleves)
   individu = Individu.new
-  individu.chromosome =  c
+  individu.chromosome = chromosome
   individu.score = s
 
   individus << individu
@@ -190,7 +224,13 @@ nombre_generations.times do |gen|
   #Mutations
   nombre_mutations.times do
     mutation_par_chromosome.times do
-      nouveaux_individus.sample.chromosome[rand(longueur_chromosome)] = symboles.sample
+      index = rand(longueur_chromosome)
+      eleve = eleves[index]
+      groupes_permis = programme_groupes[eleve[3]] & anglais_groupes[eleve[4]]
+      if groupes_permis.empty?
+        raise "pas de groupe"
+      end
+      nouveaux_individus.sample.chromosome[index] = groupes_permis.sample
     end
   end
 
@@ -215,10 +255,20 @@ nombre_generations.times do |gen|
 end
 
 best.chromosome.each_with_index {|groupe, index| eleves[index] << groupe }
-eleves.sort{|a,b| a[9] <=> b[9] }.each{|e| puts e.join(",")}
+eleves.sort{|a,b| a[9] <=> b[9] }.each{|e| puts e.join("\t")}
 
 symboles.each do |gr|
   nombre = eleves.select{|el| el[9] == gr}.size
   puts "#{gr} #{nombre}"
 end
+puts "Anglais"
+puts "ELA 1 : #{eleves.select{|el| el[9] == "41" or el[9] == "42" and el[4] == "ELA"}.size}"
+puts "EESL 1: #{eleves.select{|el| el[9] == "41" or el[9] == "42" and el[4] == "EESL"}.size}"
+puts "EESL 3: #{eleves.select{|el| el[9] == "43" or el[9] == "44" and el[4] == "EESL"}.size}"
+puts "ESL 3 : #{eleves.select{|el| el[9] == "43" or el[9] == "44" and el[4] == "ESL"}.size}"
+puts "EESL 3: #{eleves.select{|el| el[9] == "45" or el[9] == "46" and el[4] == "EESL"}.size}"
+puts "ESL 5 : #{eleves.select{|el| el[9] == "45" or el[9] == "46" and el[4] == "ESL"}.size}"
+puts "EESL 7: #{eleves.select{|el| el[9] == "47" or el[9] == "48" and el[4] == "EESL"}.size}"
+puts "ESL 7 : #{eleves.select{|el| el[9] == "47" or el[9] == "48" and el[4] == "ESL"}.size}"
+
 puts eleves.size
