@@ -100,7 +100,7 @@ def calculer_probabilite_reproduction(individus)
   somme_prob = 0.0
   individus = individus.sort{|a,b| a.probabilite <=> b.probabilite}
   individus.each do |individu|
-    somme_prob = somme_prob + individu.probabilite
+    somme_prob += individu.probabilite
     individu.prob_cumulee = somme_prob
   end
   return individus, somme_scores
@@ -154,13 +154,6 @@ end
 f.close
 eleves = eleves.shuffle
 
-nela = eleves.select{|el| el[4] == "ELA"}.size
-puts "ELA #{nela}"
-neesl = eleves.select{|el| el[4] == "EESL"}.size
-puts "EESL #{neesl}"
-nesl = eleves.select{|el| el[4] == "ESL"}.size
-puts "ESL #{nesl}"
-
 #---Hyperparamètres
 population = 800
 nombre_generations = 1000
@@ -170,22 +163,31 @@ mutation_par_chromosome = 10
 longueur_chromosome = eleves.size
 pcent = 0.0
 
-symboles = ["41", "42", "43", "44", "45", "46", "47", "48" ]
+groupes = ["41", "42", "43", "44", "45", "46", "47", "48" ]
 max_score = 1000
 
 #---Générer les individus de la génération initiale
 individus = Array.new
-programme_groupes = {  "REG" => ["41", "43", "45", "47", "48"],
-                       "ENR" => ["42", "44", "46"] }
-anglais_groupes = { "ELA" => ["41", "42"],
-                    "EESL" => ["41", "42", "43", "44", "45", "46", "47", "48"],
-                    "ESL" =>  ["43", "44", "45", "46", "47", "48"] }
+attribut_groupes = { "REG"    => ["41", "43", "45", "47", "48"],
+                     "ENR"    => ["42", "44", "46"],
+                     "ELA"    => ["41", "42"],
+                     "EESL"   => ["41", "42", "43", "44", "45", "46", "47", "48"],
+                     "ESL"    => ["43", "44", "45", "46", "47", "48"],
+                     "EPS"    => ["41", "42", "43", "44", "45", "46", "47", "48"],
+                     "MULTI"  => ["41", "42", "43", "44"],
+                     "SOCCER" => ["41", "42", "43", "44"],
+                     "VOLLEY" => ["41", "42", "43", "44"],
+                     "CST4"   => ["41", "43", "48"],
+                     "SN4"    => ["41", "42", "43", "44", "45", "46", "47", "48"]}
 
 population.times do
   chromosome = Array.new
   longueur_chromosome.times do |index|
     eleve = eleves[index]
-    groupes_permis = programme_groupes[eleve[3]] & anglais_groupes[eleve[4]]
+    groupes_permis = groupes
+    for i in 3..6 do
+      groupes_permis = groupes_permis & attribut_groupes[eleve[i]]
+    end
     chromosome << groupes_permis.sample
   end
 
@@ -206,6 +208,7 @@ best = individus.last
 
 puts "Let's go!"
 nouveaux_individus = Array.new
+
 nombre_generations.times do |gen|
   nouveaux_individus.clear
   population.times do |i|
@@ -226,7 +229,10 @@ nombre_generations.times do |gen|
     mutation_par_chromosome.times do
       index = rand(longueur_chromosome)
       eleve = eleves[index]
-      groupes_permis = programme_groupes[eleve[3]] & anglais_groupes[eleve[4]]
+      groupes_permis = groupes
+      for i in 3..6 do
+        groupes_permis = groupes_permis & attribut_groupes[eleve[i]]
+      end
       if groupes_permis.empty?
         raise "pas de groupe"
       end
@@ -257,7 +263,7 @@ end
 best.chromosome.each_with_index {|groupe, index| eleves[index] << groupe }
 eleves.sort{|a,b| a[9] <=> b[9] }.each{|e| puts e.join("\t")}
 
-symboles.each do |gr|
+groupes.each do |gr|
   nombre = eleves.select{|el| el[9] == gr}.size
   puts "#{gr} #{nombre}"
 end
